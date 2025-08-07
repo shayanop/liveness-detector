@@ -1,0 +1,43 @@
+FROM python:3.10-slim
+
+WORKDIR /app
+
+# Install system dependencies for OpenCV, MediaPipe, and streamlit-webrtc
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    curl \
+    software-properties-common \
+    git \
+    libgl1-mesa-dev \
+    libegl1 \
+    libglib2.0-0 \
+    libpng-dev \
+    libjpeg-dev \
+    libtiff-dev \
+    ffmpeg \
+    libavformat-dev \
+    libavcodec-dev \
+    libavutil-dev \
+    libswscale-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set Streamlit config directory to a writable path
+ENV STREAMLIT_CONFIG_DIR=/app/.streamlit
+
+# Create Streamlit config directory
+RUN mkdir -p /app/.streamlit
+
+# Upgrade pip and install dependencies
+RUN pip3 install --no-cache-dir --upgrade pip
+
+COPY requirements.txt ./
+RUN pip3 install --no-cache-dir -r requirements.txt
+
+# Verify streamlit installation
+RUN streamlit --version || { echo "Streamlit installation failed"; exit 1; }
+
+COPY src/ ./src/
+
+EXPOSE 7860
+
+ENTRYPOINT ["streamlit", "run", "src/streamlit_app.py", "--server.port=7860", "--server.address=0.0.0.0"]
